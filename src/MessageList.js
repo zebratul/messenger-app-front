@@ -5,57 +5,59 @@ import { formatDate } from './utils';
 import axios from 'axios';
 import io from 'socket.io-client';
 
-const serverUrl = 'https://backend-task5.osc-fr1.scalingo.io';
+const serverUrl = 'https://messanger-back.onrender.com';
 
 const MessageList = ({ userName }) => {
-  const [messages, setMessages] = useState([]);
-  const socketRef = useRef(null);
+    const [messages, setMessages] = useState([]);
+    const socketRef = useRef(null);
 
-  useEffect(() => {
-    
-    socketRef.current = io(serverUrl, {
-        transports: ['websocket'],
-      });
-    socketRef.current.on('newMessage', (message) => {
-      if (message.recipient_name === userName) {
-        setMessages((prevState) => [message, ...prevState]);
-      }
-    });
-    return () => {
-      socketRef.current.disconnect();
-    };
-  }, [userName]);
+    useEffect(() => {
+        socketRef.current = io(serverUrl, {
+            transports: ['websocket'],
+        });
+        socketRef.current.on('newMessage', (message) => {
+            if (message.recipient_name === userName) {
+                setMessages((prevState) => [message, ...prevState]);
+            }
+        });
+        return () => {
+            socketRef.current.disconnect();
+        };
+    }, [userName]);
 
-  useEffect(() => {
-    const getMessages = async () => {
-      try {
-        const response = await axios.get(`${serverUrl}/messages/${userName}`);
-        const formattedMessages = response.data.data.map((message) => ({
-          ...message,
-          isExpanded: false,
-        }));
-        setMessages(formattedMessages);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-  
-    if (userName) {
-      getMessages();
-    }
-  }, [userName]);
-
-  const toggleMessage = (id) => {
-    setMessages((prevState) =>
-      prevState.map((message) => {
-        if (message.id === id) {
-          return { ...message, isExpanded: !message.isExpanded };
-        } else {
-          return message;
+    useEffect(() => {
+        const getMessages = async () => {
+            try {
+                const response = await axios.get(`${serverUrl}/messages/${userName}`, {
+                    headers: {
+                        'Access-Control-Allow-Origin': '*',
+                    },
+                });
+                const formattedMessages = response.data.data.map((message) => ({
+                    ...message,
+                    isExpanded: false,
+                }));
+                setMessages(formattedMessages);
+            } catch (error) {
+                console.log(error);
+            }
+        };
+        if (userName) {
+            getMessages();
         }
-      })
-    );
-  };
+    }, [userName]);
+    
+    const toggleMessage = (id) => {
+        setMessages((prevState) =>
+            prevState.map((message) => {
+                if (message.id === id) {
+                    return { ...message, isExpanded: !message.isExpanded };
+                } else {
+                    return message;
+                }
+            })
+        );
+    };
 
   return (
     <ListGroup className="mt-4">
